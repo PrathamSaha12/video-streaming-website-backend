@@ -34,7 +34,7 @@ const userSchema = new Schema({
     },
 
     coverimage:{
-        tupe : String,
+        type : String,
     },
 
     watchhistory:[

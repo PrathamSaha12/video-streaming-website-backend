@@ -4,6 +4,9 @@ import { User } from "../models/user.model.js"
 import {uploadCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 
+
+
+
 const registerUser = asyncHandler( async (req,res) => {
      //get user details from frontend
      //validation(notwmpty) *emptyname_emptyemail_correctformat
@@ -17,22 +20,25 @@ const registerUser = asyncHandler( async (req,res) => {
 
     const {fullname , username , email , password} = req.body
     console.log("email : " , email);
+    console.log("username : " , username);
 
     if([fullname , email, username, password].some((field)=> field?.trim() === "")){
         throw new ApiError (400,"all fields are required")
     }
 
 
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{username},{email}]
     })
+    console.log(`user is ${existedUser}`);
+    
 
     if (existedUser) {
         throw new ApiError (409,"user with emai or username already exist")
     }
     
-    const avatarLocalPath = req.files?.avatar[0]?.path
-    const coverimageLocalPath = req.files?.coverimage[0]?.path
+    const avatarLocalPath = req.files.avatar[0]?.path
+    const coverimageLocalPath = req.files.coverimage[0]?.path
 
     if(!avatarLocalPath) {
         throw new ApiError(400,"avatar is required")
@@ -48,7 +54,7 @@ const registerUser = asyncHandler( async (req,res) => {
     }
 
 
-    const user = await username.create({
+    const user = await User.create({
         fullname,
         avatar: avatar.url,
         coverimage : coverimage?.url || "",
@@ -57,7 +63,7 @@ const registerUser = asyncHandler( async (req,res) => {
         username : username.toLowerCase()
     })
 
-   const createdUser = await user.findById(user._id).select(
+   const createdUser = await User.findById(user._id).select(
     "-password -refreshtoken"
    )
 
