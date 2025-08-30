@@ -287,6 +287,7 @@ const updateAccountDetails = asyncHandler(async(req,res)=>{
 
 
 const updateUserAvatar =asyncHandler(async(req,res)=>{
+
     const avatarLocalpath = req.file?.path
 
     if(!avatarLocalpath){
@@ -299,7 +300,7 @@ const updateUserAvatar =asyncHandler(async(req,res)=>{
         throw new ApiError(400, "error while uploading avatar")
     }
 
-    //todo: delete old image -assignment
+   
     const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
@@ -500,5 +501,6 @@ export {
     updateUserAvatar,
     updateCoverImage,
     getUserChannelProfile,
-    getWtchHistroy
+    getWtchHistroy,
+    
 }
