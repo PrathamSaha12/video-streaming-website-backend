@@ -4,7 +4,6 @@ import { User } from "../models/user.model.js"
 import {uploadCloudinary} from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/apiResponse.js"
 import jwt from "jsonwebtoken"
-import { response } from "express"
 import mongoose from "mongoose"
 
 
@@ -364,7 +363,7 @@ const getUserChannelProfile = asyncHandler(async(req,res) =>{
     const channel = await User.aggregate([
         {
            $match:{
-                username: username?.toLowerCase()
+                username: username.toLowerCase()
             }
             
         },
@@ -380,21 +379,21 @@ const getUserChannelProfile = asyncHandler(async(req,res) =>{
             $lookup:{
                 from: "subscriptions",
                 localField:"_id",
-                foreignField:"subsciber",
+                foreignField:"subscriber",
                 as : "subscribe_to" 
             }
         },
         {
             $addFields:{
-                subsribersCount:{
-                    $size: "subscribers"
+                subscribersCount:{
+                    $size: "$subscribers"
                 },
                 channelSubscribedToCount: {
-                    $size: "subscribe_to"
+                    $size: "$subscribe_to"
                 },
                 isSubscribed:{
                     $cond:{
-                        if:{$in: [req.user?._id,"subscribers.subsciber"]},
+                        if:{$in: [req.user?._id,"$subscribers.subscriber"]},
                         then: true,
                         else: false
                     }
@@ -407,7 +406,7 @@ const getUserChannelProfile = asyncHandler(async(req,res) =>{
                 fullname: 1,
                 email: 1,
                 username: 1,
-                subsribersCount: 1,
+                subscribersCount: 1,
                 channelSubscribedToCount: 1,
                 isSubscribed: 1,
                 avatar: 1,
