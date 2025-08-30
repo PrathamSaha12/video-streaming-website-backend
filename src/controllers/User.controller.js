@@ -356,9 +356,11 @@ const updateCoverImage =asyncHandler(async(req,res)=>{
 const getUserChannelProfile = asyncHandler(async(req,res) =>{
     const {username} = req.params
 
-    if(!username){
+    if(!username?.trim()){
         throw new ApiError(400,"username is missing")
     }
+
+    console.log("username is :",username)
 
     const channel = await User.aggregate([
         {
@@ -414,6 +416,7 @@ const getUserChannelProfile = asyncHandler(async(req,res) =>{
             }
         }
     ])
+    //console.log("channel is",channel)
 
     if(!channel?.length){
         throw new ApiError(404, "channel does not exist")
@@ -425,9 +428,6 @@ const getUserChannelProfile = asyncHandler(async(req,res) =>{
         new ApiResponse(200,channel[0],"User channel fetched successfully")
     )
     
-
-
-
 })
 console.log(getUserChannelProfile)
 
@@ -465,7 +465,7 @@ const getWtchHistroy = asyncHandler(async(req,res)=>{
                     {
                         $addFields:{
                             owner:{
-                                $first: "$owner "
+                                $first: "$owner"
                             }
                         }
                     }
