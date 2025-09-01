@@ -101,8 +101,13 @@ const updateTweet = asyncHandler(async (req, res) => {
         throw new ApiError(400,"your tweet id is missing")
     }
     //console.log("tweet id is :",tweetId);
+    const tweet= await Tweet.findById(tweetId)
+    const user = req.user?._id
+    if(tweet.owner.toString()!== user.toString()){
+        throw new ApiError(400,"you cant access to update tweet")
+    }
     
-    const tweet = await Tweet.findByIdAndUpdate(
+    const tweetUpdate = await Tweet.findByIdAndUpdate(
         tweetId,
         {
             $set:{
@@ -120,7 +125,7 @@ const updateTweet = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,tweet,"tweet updated sucessfully")
+        new ApiResponse(200,tweetUpdate,"tweet updated sucessfully")
     )
 })
 
@@ -129,6 +134,12 @@ const deleteTweet = asyncHandler(async (req, res) => {
     const {tweetId} = req.params
     if(!tweetId){
         throw new ApiError("tweet id is missing")
+    }
+
+    const tweet= await Tweet.findById(tweetId)
+    const user = req.user?._id
+    if(tweet.owner.toString()!== user.toString()){
+        throw new ApiError(400,"you cant access to update tweet")
     }
 
     const tweetDelete = await Tweet.findByIdAndDelete(
