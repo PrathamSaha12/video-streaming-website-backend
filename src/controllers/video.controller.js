@@ -9,7 +9,77 @@ import {uploadCloudinary } from "../utils/cloudinary.js"
 
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
-    //TODO: get all videos based on query, sort, pagination
+    //TODO: get all videos based on query, sort, pagination 
+
+    const userVideo = await Video.aggregate(
+        [
+            {
+                $match:{
+                    $or:[
+                        {title:{$regex: query || "", $options:"i"}},
+                        {description:{$regex: query || "", $options:"i"}}
+                    ]
+                }
+            },
+            {
+                $lookup:{
+                    from:"users",
+                    localField:"owner",
+                    foreignField:"_id",
+                    as:"owner",
+                    pipeline:[
+                        {
+
+                            $project:{
+                                username:1,
+                                fullname:1,
+                                avatar:1
+                            }
+                        }
+                    ]
+                }
+            },
+            {
+                $addFields:{
+                    owner:{
+                        $first:"$owner"
+                    }
+                }
+            },
+            {
+                $project:{
+                    title:1,
+                    description:1,
+                    thumbnail:1,
+                    videoFile:1,
+                    owner:1,
+                    userId:1
+                }
+            },
+            {
+                $sort:{
+                    [sortBy]:sortType === "asc"? 1 :-1
+                }
+            },
+            {
+                $skip: (parseInt(page)-1)*(parseInt(limit))
+            },
+            {
+                $limit: parseInt(limit)
+            }
+        ]
+    )
+
+    if(!userVideo|| userVideo.length===0){
+        throw new ApiError(404,"no videos found")
+    }
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,userVideo,"all videos fetched successfully")
+    )
+
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
@@ -108,6 +178,11 @@ const getVideoById = asyncHandler(async (req, res) => {
         }
     ])
 
+     if(!userVideo|| userVideo.length===0){
+        throw new ApiError(404,"no videos found")
+    }
+
+
     return res
     .status(200)
     .json(
@@ -188,6 +263,41 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    if(!videoId){
+        throw new ApiError(404,"videoId not found")
+    }
+
+    const video = await Video.findById(videoId)
+    if(!video){
+        throw new ApiError(404,"video not found")
+    }
+   
+
+    const user = req.user?._id
+
+    if(video.owner.toString() !== user.toString()){
+        throw new ApiError(403,"you are not allowed to update publish status")
+    }
+
+    
+    const publishStatus = await Video.findByIdAndUpdate(
+        videoId,
+        {
+            $set:{
+                isPublished: !video.isPublished
+            }
+        },
+        {
+            new : true
+        }
+    )
+    
+    return res
+    .status(201)
+    .json(
+        new ApiResponse(201,publishStatus,"publish status update successfully")
+    )
+
 })
 
 export {

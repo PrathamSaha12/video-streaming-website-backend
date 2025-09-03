@@ -74,8 +74,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
        
     ])
 
-    if(!userwithTweets){
-        throw new ApiError(400,"user does not post any tweet yet")
+    if(!userwithTweets || userwithTweets.length === 0){
+        throw new ApiError(404,"user tweets not found")
     }
 
     return res
@@ -117,7 +117,7 @@ const updateTweet = asyncHandler(async (req, res) => {
         {new: true}
     )
 
-    if(!tweet){
+    if(!tweet || tweet.length === 0){
         throw new ApiError(404,"tweet not found")
     }
     //console.log("updated tweet is :",tweet)

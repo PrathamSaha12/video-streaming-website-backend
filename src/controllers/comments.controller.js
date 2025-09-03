@@ -60,6 +60,11 @@ const getVideoComments = asyncHandler(async (req, res) => {
         ]
     )
 
+     if(!userComment|| userComment.length===0){
+        throw new ApiError(40,"no comments found")
+    }
+
+
     return res
     .status(200)
     .json(
@@ -135,10 +140,9 @@ const updateComment = asyncHandler(async (req, res) => {
             new:true
         }
      )
-    if(!commentUpdate){
-        throw new ApiError(400,"error while updating comment")
+    if(!commentId|| commentId.length===0){
+        throw new ApiError(40,"no comments found")
     }
-
     return res
     .status(200)
     .json(
