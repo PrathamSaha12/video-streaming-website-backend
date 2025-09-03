@@ -2,6 +2,7 @@ import { v2 as cloudinary} from "cloudinary"
 import fs from "fs"
 import path from "path"
 
+
 const uploadCloudinary = async (localFilePath) => {
     try {
         if (!localFilePath) {
@@ -56,7 +57,33 @@ const uploadCloudinary = async (localFilePath) => {
 }
 
 
+const deleteFromCloudinary = async(cloudUrl)=>{
+    try {
+
+        if(!cloudUrl){
+            return  null
+        }
+        cloudinary.config({ 
+            cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET,
+        });
+        const public_id = cloudUrl.split("/").pop().split(".")[0]
+        const extension = cloudUrl.split("/").pop().split(".").pop().toLowerCase()
+        const resourceType = ["mp4","mov","avi"].includes(extension) ? "video" : "image"
+
+        const deleteFile = await cloudinary.uploader.destroy(public_id,{resource_type: resourceType})
+        console.log("delete file is ",deleteFile)
+        return deleteFile
+    } 
+
+    catch (error) {
+        console.error("error deleting file",error)
+        
+    }
+}
 
 
 
-export { uploadCloudinary }
+
+export { uploadCloudinary,deleteFromCloudinary}

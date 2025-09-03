@@ -4,7 +4,7 @@ import {User} from "../models/user.model.js"
 import {ApiError} from "../utils/apiError.js"
 import {ApiResponse} from "../utils/apiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import {uploadCloudinary } from "../utils/cloudinary.js"
+import {deleteFromCloudinary, uploadCloudinary } from "../utils/cloudinary.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -191,28 +191,12 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 })
 
+
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
     //TODO: update video details like title, description, thumbnail
 
     const {title , description }= req.body
-    
-   if(!(title)){
-        throw new ApiError(400,"title is required")
-    }
-    if(!description){
-        throw new ApiError(400,"description is required")
-    }
-
-    const thumbnailLocalPath = req.file?.path
-    if(!thumbnailLocalPath){
-        throw new ApiError(400,"thumbnail file is missing")
-    }
-
-    const thumbnail = await uploadCloudinary(thumbnailLocalPath)
-    if(!thumbnail.url){
-        throw new ApiError(400,"error while uploading thumbnail")
-    }
 
     const user = req.user?._id
     const video = await Video.findById(videoId)
@@ -221,13 +205,38 @@ const updateVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400,"you are not autorized to update this video")
     }
     
+    let updatedFields = {}
+
+    if(title){
+        updatedFields.title = title
+    }
+
+    if(description){
+        updatedFields.description = description
+    }
+
+    const newthumbnailLocalPath = req.file?.path
+    if(newthumbnailLocalPath){
+        try {
+            await deleteFromCloudinary (video.thumbnail)
+        }   
+        catch (error) {
+            throw new ApiError(500,"error while deleting previous thumbnail")
+        }
+
+        const newthumbnail = await uploadCloudinary(newthumbnailLocalPath)
+        if(!newthumbnail.url){
+            throw new ApiError(400,"error while uploading thumbnail")
+        }
+         
+        
+        updatedFields.thumbnail = newthumbnail.url;
+    }
+  
     const videoUpdate = await Video.findByIdAndUpdate(
         videoId,{
-            $set:{
-            title : title,
-            description : description,
-            thumbnail : thumbnail.url
-        }
+            $set:updatedFields
+        
         },
         {new : true}
         
@@ -248,6 +257,18 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     if(video.owner.toString() != user.toString()){
         throw new ApiError(400,"you are not autorized to delete  this video")
+    }
+
+    try {
+        await deleteFromCloudinary(video.videoFile)
+    } catch (error) {
+        throw new ApiError(500,"error while deleting file from cloudinary")
+    }
+
+    try {
+        await deleteFromCloudinary(video.thumbnail)
+    } catch (error) {
+        throw new ApiError(500,"error while deleting thumbnail from cloudinary")
     }
 
     const videoDelete = await Video.findByIdAndDelete(videoId)

@@ -54,4 +54,8 @@ app.use("/api/v1/comments", commentRouter)
 import videoRouter from "./routes/video.routes.js"
 app.use("/api/v1/videos", videoRouter)
 
+
+import subscriptionRouter from "./routes/subscription.routes.js"
+app.use("/api/v1/subscriptions", subscriptionRouter)
+
 export{app}
