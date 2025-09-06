@@ -88,11 +88,14 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
                 likedBy : userId
             }
         )
-        like:true
+        
 
         if(!commentLike){
             throw new ApiError(400, " error occur while liking this comment")
         }
+
+        like = true
+        //console.log("like t",like)
     }
 
 
@@ -104,12 +107,15 @@ const toggleCommentLike = asyncHandler(async (req, res) => {
                 likedBy : userId
             }
         )
-        like:false
 
         if(!commentUnlike){
             throw new ApiError(400, " error occur while unliking this comment")
         }
+        like = false
+        // console.log("like f",like)
     }
+
+   // console.log("like is:",like)
    
     return res
     .status(200)
@@ -148,9 +154,9 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
             }
 
         )
-        like:true
+        like = true
         if(!tweetLike){
-            throw new ApiError(400,"erro occur while liking the tweet")
+            throw new ApiError(400,"error occur while liking the tweet")
         }
         
     }
@@ -162,12 +168,13 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
                 likedBy: userId
             }
         )
-        like:false
+        like = false
 
         if(!unlikeTweet){
             throw new ApiError(400, "error occur while unliking the tweet")
         }
     }
+    console.log("like:",like)
 
     return res
     .status(200)
@@ -181,7 +188,10 @@ const toggleTweetLike = asyncHandler(async (req, res) => {
 const getLikedVideos = asyncHandler(async (req, res) => {
     //TODO: get all liked videos
 
-    const userId = user
+    const userId = req.user?._id
+    if(!userId){
+        throw new ApiError(400,"user id not found")
+    }
 
     const getallLikevideos = await Like.aggregate(
         [
@@ -265,4 +275,4 @@ export {
     toggleTweetLike,
     toggleVideoLike,
     getLikedVideos
-}
+} 
