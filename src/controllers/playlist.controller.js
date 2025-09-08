@@ -11,6 +11,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     if(!name){
         throw new ApiError(400,"name is required")
     }
+    console.log("name is:",name)
 
     if(!description){
         throw new ApiError(400,"description is required")
@@ -36,21 +37,21 @@ const createPlaylist = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,"playlist created successfully")
+        new ApiResponse(200,playlist,"playlist created successfully")
     )
 })
 
 const getUserPlaylists = asyncHandler(async (req, res) => {
     const {userId} = req.params
     //TODO: get user playlists
-    if(!userId){
+    if(!userId || !mongoose.isValidObjectId(userId)){
         throw new ApiError(400,"user id not found")
     }
     const userPlaylist = await Playlist.aggregate(
         [
             {//lookup for owner of playlist
                 $match:{
-                    createdBy : await mongoose.Types.ObjectId(userId)
+                    owner : new mongoose.Types.ObjectId(userId)
                 }
             },
             {
@@ -92,8 +93,8 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
                                 as:"owner",
                                 pipeline:[
                                     {
-                                        $projeect:{
-                                            usename:1,
+                                        $project:{
+                                            username:1,
                                             fullname:1,
                                             avatar:1,
                                         }
@@ -107,6 +108,16 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
                                     $first:"$owner"
                                 }
                             }
+                        },
+                        {
+                            $project: {
+                                title: 1,
+                                description: 1,
+                                thumbnail: 1,
+                                owner: 1,
+                                duration: 1,
+                                views: 1
+                            }
                         }
                     ]
                 }
@@ -114,7 +125,7 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
             {
                 $project:{
                     videos: 1,
-                    creatdeBY: 1,
+                    createdBy: 1,
                     name: 1,
                     description: 1
                 }
@@ -128,20 +139,20 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,"playlist created successfully")
+        new ApiResponse(200,userPlaylist,"userPlaylist fetched successfully")
     )
 })
 
 const getPlaylistById = asyncHandler(async (req, res) => {
     const {playlistId} = req.params
-    if(!playlistId){
-        throw new ApiError(400,"play list id not found")
+    if(!playlistId || !isValidObjectId(playlistId)){
+        throw new ApiError(400,"play list id not found") 
     }
 
     const userPlaylist = await Playlist.aggregate([
         {
             $match:{
-                _id : await mongoose.Types.ObjectId(playlistId)
+                _id : new mongoose.Types.ObjectId(playlistId)
             }
         },
         {
@@ -164,7 +175,7 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         {
             $addFields:{
                 createdBy:{
-                    $first:"$owner"
+                    $first:"$createdBy"
                 }
             }
         },
@@ -194,7 +205,8 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                     },
                     {
                         $addFields: {
-                            $first : "$owner"
+                            owner:{$first : "$owner"}
+                           
                         }
                     }
                 ]
@@ -203,21 +215,21 @@ const getPlaylistById = asyncHandler(async (req, res) => {
         {
             $project : {
                 videos: 1,
-                creatdeBY: 1,
+                createdBy: 1,
                 name: 1,
                 description: 1
             }
         }
 
     ])
-    if(!userPlaylist){
+    if(!userPlaylist || userPlaylist.length === 0){
         throw new ApiError(400,"error while creating playlist")
     }
 
     return res
     .status(200)
     .json(
-        new ApiResponse(200,"playlist created successfully")
+        new ApiResponse(200,userPlaylist,"playlist fetched successfully")
     )
     
 })
@@ -263,7 +275,7 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,"add videos to the playlist successfully")
+        new ApiResponse(200,addVideos,"add videos to the playlist successfully")
     )
 })
 
@@ -305,7 +317,7 @@ const removeVideoFromPlaylist = asyncHandler(async (req, res) => {
     return res
     .status(200)
     .json(
-        new ApiResponse(200,"remove video from playlist successfully")
+        new ApiResponse(200,removeVideo,"remove video from playlist successfully")
     )
 
 })
@@ -320,7 +332,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
     if(!playlist){
         throw new ApiError(400,"playlist not found")
     }
-    const user = eq.user?._id
+    const user = req.user?._id
     if(!user){
         throw new ApiError(400,"invalid or missing userId")
     }
@@ -329,7 +341,7 @@ const deletePlaylist = asyncHandler(async (req, res) => {
         throw new ApiError(400,"you are not allowed to delete the playlist")
     }
 
-    const  playlistDelete = await Playlist.findByIdAndDelete(playlistId)
+    const  playlistDelete = await Playlist.findByIdAndDelete(playlist)
 
     if(!playlistDelete){
         throw new ApiError(400,"error while deleting the Playlist")
@@ -363,7 +375,7 @@ const updatePlaylist = asyncHandler(async (req, res) => {
     if(!playList){
         throw new ApiError(404,"playlist not found")
     }
-    const user = req.body?._id
+    const user = req.user?._id
     if(!user){
         throw new ApiError(400,"invalid or missing userId")
     }
