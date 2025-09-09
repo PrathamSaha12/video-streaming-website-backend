@@ -51,7 +51,17 @@ app.use("/api/v1/subscriptions", subscriptionRouter)
 import likeRouter from "./routes/like.routes.js"
 app.use("/api/v1/likes", likeRouter)
 
+
 import playlistRouter from "./routes/playlist.routes.js"
 app.use("/api/v1/playlist", playlistRouter)
+
+
+import dashboardRouter from "./routes/dashboard.routes.js"
+app.use("/api/v1/dashboard", dashboardRouter)
+
+
+import healthcheckRouter from "./routes/healthcheck.routes.js"
+app.use("/api/v1/healthcheck", healthcheckRouter)
+
 
 export{app}
